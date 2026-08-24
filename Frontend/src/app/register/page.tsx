@@ -3,16 +3,15 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input'
 import { registerSchema, registerSchemaType } from '@/Schema/Register.schema'
 import { zodResolver } from '@hookform/resolvers/zod'
-import axios, { AxiosError } from 'axios'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import registerApi from '@/AuthActions/register'
 import { signIn } from 'next-auth/react'
 import React, { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 import { User, Mail, Lock, Phone, ArrowRight, Loader2, UserPlus } from 'lucide-react'
 import { motion } from 'framer-motion'
-import { apiUrl } from '@/lib/api';
 
 export default function Register() {
   const router = useRouter();
@@ -32,8 +31,14 @@ export default function Register() {
   async function handleRegister(values: registerSchemaType) {
     setLoading(true);
     try {
-      const response = await axios.post(apiUrl('/auth/signup'), values);
-      if (response?.data?.message === "success") {
+      const response = await registerApi(values);
+
+      if (response?.message !== "success") {
+        toast.error(response?.error || "Registration failed", { position: "top-right", duration: 4000 });
+        return;
+      }
+
+      {
         // The account is usable straight away; the verification email only
         // flips `isVerified`, so sign the new user in rather than bouncing
         // them to the login form.
@@ -52,12 +57,8 @@ export default function Register() {
           router.push("/login");
         }
       }
-    } catch (error: unknown) {
-      if (error instanceof AxiosError) {
-        toast.error(error?.response?.data?.message || "Registration failed", { position: "top-right", duration: 3000 });
-      } else {
-        toast.error("An error occurred during registration");
-      }
+    } catch {
+      toast.error("An error occurred during registration", { position: "top-right", duration: 3000 });
     } finally {
       setLoading(false);
     }
