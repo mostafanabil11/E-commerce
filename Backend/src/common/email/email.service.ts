@@ -1,195 +1,202 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import * as nodemailer from 'nodemailer';
 import * as ejs from 'ejs';
+import { existsSync } from 'fs';
 import * as path from 'path';
 
+const BREVO_ENDPOINT = 'https://api.brevo.com/v3/smtp/email';
+
+interface Sender {
+  name?: string;
+  email: string;
+}
+
+interface SendOptions {
+  to: string;
+  subject: string;
+  template: string;
+  data: Record<string, unknown>;
+}
+
+/**
+ * Transactional email via Brevo's HTTP API.
+ *
+ * The HTTP API is used rather than SMTP so delivery does not depend on
+ * outbound SMTP ports, which are commonly blocked by hosting providers.
+ * Bodies are still rendered from the EJS templates in ./templates.
+ */
 @Injectable()
 export class EmailService {
   private readonly logger = new Logger(EmailService.name);
-  private transporter: nodemailer.Transporter;
 
-  constructor(private readonly configService: ConfigService) {
-    this.transporter = nodemailer.createTransport({
-      service: 'gmail',
-      host: 'smtp.gmail.com',
-      port: 465,
-      secure: true,
-      auth: {
-        user: this.configService.getOrThrow<string>('EMAIL_USER'),
-        pass: this.configService.getOrThrow<string>('EMAIL_PASS'),
+  constructor(private readonly configService: ConfigService) {}
+
+  private getApiKey(): string {
+    const key = this.configService.get<string>('BREVO_API_KEY')?.trim();
+
+    if (!key || key.startsWith('your_')) {
+      throw new ServiceUnavailableException(
+        'Email delivery is not configured. Set BREVO_API_KEY in config/dev.env.',
+      );
+    }
+
+    return key;
+  }
+
+  /**
+   * Brevo needs the sender split into name and address. `EMAIL_FROM` accepts
+   * either `Name <address@example.com>` or a bare address.
+   */
+  private getSender(): Sender {
+    const explicitEmail = this.configService
+      .get<string>('BREVO_SENDER_EMAIL')
+      ?.trim();
+
+    if (explicitEmail) {
+      return {
+        email: explicitEmail,
+        name: this.configService.get<string>('BREVO_SENDER_NAME')?.trim(),
+      };
+    }
+
+    const raw = (this.configService.get<string>('EMAIL_FROM') ?? '')
+      .replace(/^["']|["']$/g, '')
+      .trim();
+
+    const match = raw.match(/^(.*)<\s*([^>]+)\s*>$/);
+    if (match) {
+      return { name: match[1].trim().replace(/^["']|["']$/g, ''), email: match[2].trim() };
+    }
+
+    if (!raw) {
+      throw new ServiceUnavailableException(
+        'No email sender configured. Set BREVO_SENDER_EMAIL or EMAIL_FROM in config/dev.env.',
+      );
+    }
+
+    return { email: raw };
+  }
+
+  /**
+   * Templates sit beside the compiled output in dist, but fall back to the
+   * source tree when running from ts-node (seeding, scripts).
+   */
+  private resolveTemplate(name: string): string {
+    const compiled = path.join(__dirname, 'templates', name);
+    if (existsSync(compiled)) return compiled;
+
+    return path.join(process.cwd(), 'src', 'common', 'email', 'templates', name);
+  }
+
+  private async send({ to, subject, template, data }: SendOptions): Promise<void> {
+    const htmlContent = await ejs.renderFile(this.resolveTemplate(template), data);
+
+    const response = await fetch(BREVO_ENDPOINT, {
+      method: 'POST',
+      headers: {
+        'api-key': this.getApiKey(),
+        'content-type': 'application/json',
+        accept: 'application/json',
       },
-      tls: {
-        rejectUnauthorized: false,
-      },
+      body: JSON.stringify({
+        sender: this.getSender(),
+        to: [{ email: to }],
+        subject,
+        htmlContent,
+      }),
     });
+
+    if (!response.ok) {
+      // Brevo returns { code, message } on failure; log it, but do not leak
+      // provider internals to the caller.
+      const detail = await response.text();
+      this.logger.error(`Brevo rejected the message (${response.status}): ${detail}`);
+      throw new ServiceUnavailableException(
+        'The email could not be sent. Please try again shortly.',
+      );
+    }
+
+    const { messageId } = (await response.json()) as { messageId?: string };
+    this.logger.log(`Sent "${subject}" to ${to} (messageId: ${messageId ?? 'n/a'})`);
   }
 
-  private getFromHeader(): string {
-    const rawFrom = this.configService.getOrThrow<string>('EMAIL_FROM');
-    return rawFrom.replace(/^["']|["']$/g, '').trim();
-  }
-
-  async sendConfirmationEmail(
-    to: string,
-    name: string,
-    otp: string,
-  ): Promise<void> {
+  async sendConfirmationEmail(to: string, name: string, otp: string): Promise<void> {
     try {
-      let templatePath = path.join(__dirname, 'templates', 'confirm-email.ejs');
-      if (!require('fs').existsSync(templatePath)) {
-        templatePath = path.join(
-          process.cwd(),
-          'src',
-          'common',
-          'email',
-          'templates',
-          'confirm-email.ejs',
-        );
-      }
-
-      const html = await ejs.renderFile(templatePath, { name, otp });
-
-      const info = await this.transporter.sendMail({
-        from: this.getFromHeader(),
+      await this.send({
         to,
         subject: 'Verify your email address',
-        html,
+        template: 'confirm-email.ejs',
+        data: { name, otp },
       });
-
-      this.logger.log(
-        `Confirmation email sent successfully to ${to} (MessageId: ${info.messageId})`,
-      );
     } catch (error) {
-      this.logger.error(`Failed to send confirmation email to ${to}:`, error);
+      this.logger.error(`Failed to send confirmation email to ${to}: ${(error as Error).message}`);
       throw error;
     }
   }
 
-  async sendForgotPasswordEmail(
-    to: string,
-    name: string,
-    otp: string,
-  ): Promise<void> {
+  async sendForgotPasswordEmail(to: string, name: string, otp: string): Promise<void> {
     try {
-      let templatePath = path.join(__dirname, 'templates', 'forgot-password.ejs');
-      if (!require('fs').existsSync(templatePath)) {
-        templatePath = path.join(
-          process.cwd(),
-          'src',
-          'common',
-          'email',
-          'templates',
-          'forgot-password.ejs',
-        );
-      }
-
-      const html = await ejs.renderFile(templatePath, { name, otp });
-
-      const info = await this.transporter.sendMail({
-        from: this.getFromHeader(),
+      await this.send({
         to,
         subject: 'Reset your password',
-        html,
+        template: 'forgot-password.ejs',
+        data: { name, otp },
       });
-
-      this.logger.log(
-        `Forgot password email sent successfully to ${to} (MessageId: ${info.messageId})`,
-      );
     } catch (error) {
-      this.logger.error(`Failed to send forgot password email to ${to}:`, error);
+      this.logger.error(`Failed to send password reset email to ${to}: ${(error as Error).message}`);
       throw error;
     }
   }
 
   async sendOrderConfirmationEmail(to: string, name: string, order: any): Promise<void> {
     try {
-      let templatePath = path.join(__dirname, 'templates', 'order-confirmation.ejs');
-      if (!require('fs').existsSync(templatePath)) {
-        templatePath = path.join(process.cwd(), 'src', 'common', 'email', 'templates', 'order-confirmation.ejs');
-      }
-
-      const html = await ejs.renderFile(templatePath, { name, order });
-      const text = `Hi ${name},\n\nWe've received your order #${order.orderCode}! Total: ${order.totalPrice} EGP. We are processing it for shipment.\n\nThank you for shopping with us!`;
-
-      const fromHeader = this.getFromHeader();
-      const info = await this.transporter.sendMail({
-        from: fromHeader,
-        replyTo: fromHeader,
+      await this.send({
         to,
         subject: `Order Confirmed - #${order.orderCode}`,
-        text,
-        html,
-        headers: {
-          'X-Priority': '3',
-          'X-Mailer': 'ECommerceEngine/1.0',
-        },
+        template: 'order-confirmation.ejs',
+        data: { name, order },
       });
-
-      this.logger.log(`Order confirmation email sent to ${to} (MessageId: ${info.messageId})`);
     } catch (error) {
-      this.logger.error(`Failed to send order confirmation email to ${to}:`, error);
+      this.logger.error(`Failed to send order confirmation to ${to}: ${(error as Error).message}`);
+      throw error;
     }
   }
 
-  async sendOrderCancellationEmail(to: string, name: string, order: any, reason?: string): Promise<void> {
+  async sendOrderCancellationEmail(
+    to: string,
+    name: string,
+    order: any,
+    reason?: string,
+  ): Promise<void> {
     try {
-      let templatePath = path.join(__dirname, 'templates', 'order-cancellation.ejs');
-      if (!require('fs').existsSync(templatePath)) {
-        templatePath = path.join(process.cwd(), 'src', 'common', 'email', 'templates', 'order-cancellation.ejs');
-      }
-
-      const html = await ejs.renderFile(templatePath, { name, order, reason });
-      const text = `Hi ${name},\n\nYour order #${order.orderCode} has been cancelled. Reason: ${reason || 'N/A'}.\n\nIf you have any questions, please contact our support.`;
-
-      const fromHeader = this.getFromHeader();
-      const info = await this.transporter.sendMail({
-        from: fromHeader,
-        replyTo: fromHeader,
+      await this.send({
         to,
         subject: `Order Cancelled - #${order.orderCode}`,
-        text,
-        html,
-        headers: {
-          'X-Priority': '3',
-          'X-Mailer': 'ECommerceEngine/1.0',
-        },
+        template: 'order-cancellation.ejs',
+        data: { name, order, reason },
       });
-
-      this.logger.log(`Order cancellation email sent to ${to} (MessageId: ${info.messageId})`);
     } catch (error) {
-      this.logger.error(`Failed to send order cancellation email to ${to}:`, error);
+      this.logger.error(`Failed to send cancellation email to ${to}: ${(error as Error).message}`);
+      throw error;
     }
   }
 
-  async sendOrderStatusUpdateEmail(to: string, name: string, order: any, status: string): Promise<void> {
+  async sendOrderStatusUpdateEmail(
+    to: string,
+    name: string,
+    order: any,
+    status: string,
+  ): Promise<void> {
     try {
-      let templatePath = path.join(__dirname, 'templates', 'order-status.ejs');
-      if (!require('fs').existsSync(templatePath)) {
-        templatePath = path.join(process.cwd(), 'src', 'common', 'email', 'templates', 'order-status.ejs');
-      }
-
-      const html = await ejs.renderFile(templatePath, { name, order, status });
-      const text = `Hi ${name},\n\nThe status of your order #${order.orderCode} has been updated to: ${status}.\n\nThank you for shopping with us!`;
-
-      const fromHeader = this.getFromHeader();
-      const info = await this.transporter.sendMail({
-        from: fromHeader,
-        replyTo: fromHeader,
+      await this.send({
         to,
         subject: `Update on Order #${order.orderCode}: ${status}`,
-        text,
-        html,
-        headers: {
-          'X-Priority': '3',
-          'X-Mailer': 'ECommerceEngine/1.0',
-        },
+        template: 'order-status.ejs',
+        data: { name, order, status },
       });
-
-      this.logger.log(`Order status update email sent to ${to} (MessageId: ${info.messageId})`);
     } catch (error) {
-      this.logger.error(`Failed to send order status update email to ${to}:`, error);
+      this.logger.error(`Failed to send status update to ${to}: ${(error as Error).message}`);
+      throw error;
     }
   }
 }
-

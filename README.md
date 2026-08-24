@@ -25,6 +25,9 @@ E-commerce/
 - **Wishlist** — save and remove favourites from any product tile
 - **Checkout** — shipping details form with validation, redirecting to Stripe Checkout
 - **Accounts** — register (signed in automatically), log in, log out
+- **Email verification** — a code is emailed on sign-up and confirmed on a dedicated
+  page, with resend; never blocks use of the account, and a dismissible banner reminds
+  anyone who skips it
 - **Password recovery** — three-step flow: request code → verify code → set new password
 - **Dark and light themes** — system-aware, with a manual toggle
 - **Protected routes** — cart, wishlist and checkout require a session; signed-in users are
@@ -42,7 +45,8 @@ E-commerce/
 
 **Accounts and security**
 - JWT access and refresh tokens with bcrypt password hashing
-- Email verification that never blocks sign-in — the account is usable immediately
+- Email verification that never blocks sign-in — the account is usable immediately,
+  with a resend endpoint and a permanent `isVerified` flag
 - OTP-based password reset with a server-verified code step
 - Token invalidation on logout and password change
 - Role-based authorisation (admin / user) enforced by guards
@@ -62,7 +66,7 @@ E-commerce/
 - Idempotent settlement — replayed webhook events are safely ignored
 
 **Platform**
-- Transactional email via Nodemailer with EJS templates
+- Transactional email through the **Brevo** API with EJS templates
 - Optional Redis caching that degrades gracefully when unavailable
 - Swagger API documentation and a health-check endpoint
 - Repeatable database seeding from a versioned dataset
@@ -73,7 +77,7 @@ E-commerce/
 
 | | |
 |---|---|
-| **Backend** | NestJS 11, TypeScript, MongoDB, Mongoose 9, JWT, bcrypt, class-validator, Multer, Nodemailer, EJS, ioredis, Stripe, Swagger |
+| **Backend** | NestJS 11, TypeScript, MongoDB, Mongoose 9, JWT, bcrypt, class-validator, Multer, Brevo, EJS, ioredis, Stripe, Swagger |
 | **Frontend** | Next.js 15 (App Router), React 19, TypeScript, Tailwind CSS v4, shadcn/ui, NextAuth, React Hook Form, Zod, Framer Motion, Swiper, Sonner, Axios |
 
 ---
@@ -104,7 +108,8 @@ Fill in `config/dev.env`:
 | `DB_URI` | MongoDB connection string |
 | `JWT_SECRET`, `JWT_REFRESH_SECRET` | Token signing secrets |
 | `SALT_ROUNDS` | bcrypt cost factor |
-| `EMAIL_USER`, `EMAIL_PASS`, `EMAIL_FROM` | SMTP credentials |
+| `BREVO_API_KEY` | Brevo API key (SMTP & API → API Keys) |
+| `BREVO_SENDER_EMAIL`, `BREVO_SENDER_NAME` | Verified Brevo sender; falls back to `EMAIL_FROM` |
 | `REDIS_ENABLED`, `REDIS_HOST`, `REDIS_PORT` | Cache settings; set `REDIS_ENABLED=false` to disable |
 | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` | Stripe credentials |
 | `PAYMOB_*` | Paymob credentials |
@@ -158,6 +163,7 @@ All routes are prefixed with `/api/v1`.
 | `POST` | `/auth/signup` | Register; returns a token and sends the verification email |
 | `POST` | `/auth/signin` | Log in |
 | `POST` | `/auth/confirm-email` | Confirm an email with its OTP |
+| `POST` | `/auth/resend-verification` | Re-send the verification code |
 | `POST` | `/auth/forgotPasswords` | Send a reset code |
 | `POST` | `/auth/verifyResetCode` | Verify the reset code |
 | `PUT`  | `/auth/resetPassword` | Set the new password |
@@ -195,7 +201,7 @@ Frontend/
 └── src/
     ├── app/             routes and page components
     │   └── _components/ shared UI
-    ├── CartActions/ WishListActions/ CheckoutActions/ PasswordActions/
+    ├── AuthActions/ CartActions/ WishListActions/ CheckoutActions/ PasswordActions/
     ├── api/             catalogue data fetching
     ├── Schema/          Zod validation schemas
     ├── Types/           shared TypeScript types

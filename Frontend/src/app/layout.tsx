@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Plus_Jakarta_Sans, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Navbar from "./_components/Navbar/Navbar";
+import VerifyEmailBanner from "./_components/VerifyEmailBanner/VerifyEmailBanner";
 import { Toaster } from "sonner";
 
 import MySessionProvider from "@/MySessionProvider/MySessionProvider";
@@ -43,6 +44,7 @@ export default function RootLayout({
           <MySessionProvider>
             <CartContextProvider>
               <Navbar />
+              <VerifyEmailBanner />
               <main className="flex-1 w-full pt-4 pb-16">
                 {children}
               </main>

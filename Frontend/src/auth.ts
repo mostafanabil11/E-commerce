@@ -59,11 +59,18 @@ export const authOptions: NextAuthOptions = {
     })
   ],
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger, session }) {
       if (user) {
         token.user = user?.user;
         token.token = user?.token;
       }
+
+      // Called by `useSession().update()` after the email is verified, so the
+      // banner and gates react without forcing a sign-out/sign-in cycle.
+      if (trigger === "update" && session?.isVerified !== undefined) {
+        token.user = { ...token.user, isVerified: session.isVerified };
+      }
+
       return token;
     },
     async session({ session, token }) {

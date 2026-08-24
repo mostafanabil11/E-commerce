@@ -25,6 +25,7 @@ export async function middleware(request : NextRequest) {
         if(
             request.nextUrl.pathname === '/cart' || 
             request.nextUrl.pathname === '/wishlist' || 
+            request.nextUrl.pathname === '/verifyemail' || 
             request.nextUrl.pathname.startsWith('/checkout')
         ){
             return NextResponse.redirect(new URL('/login' , request.url));
@@ -34,6 +35,6 @@ export async function middleware(request : NextRequest) {
 }
 
 export const config = {
-    matcher : ['/cart', '/wishlist', '/checkout/:path*', '/login', '/register']
+    matcher : ['/cart', '/wishlist', '/verifyemail', '/checkout/:path*', '/login', '/register']
 }
 

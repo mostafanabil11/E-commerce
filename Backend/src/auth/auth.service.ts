@@ -130,16 +130,23 @@ export class AuthService {
       throw new BadRequestException('Invalid OTP');
     }
 
-    await this.userModel.findByIdAndUpdate(user._id, {
-      isVerified: true,
-      confirmedAt: new Date(),
-      $unset: {
-        confirmEmailOTP: 1,
-        confirmEmailOTPExpires: 1,
+    const confirmed = await this.userModel.findByIdAndUpdate(
+      user._id,
+      {
+        isVerified: true,
+        confirmedAt: new Date(),
+        $unset: {
+          confirmEmailOTP: 1,
+          confirmEmailOTPExpires: 1,
+        },
       },
-    });
+      { new: true },
+    );
 
-    return user.toObject();
+    // The cached credential entry carries the stale verification state.
+    await this.redisService?.del(`user:credentials:${user._id.toString()}`);
+
+    return (confirmed ?? user).toObject();
   }
   async login(loginDto: LoginDto) {
     const user = await this.userModel.findOne({

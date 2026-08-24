@@ -49,8 +49,8 @@ export default function Register() {
         });
 
         if (signInResult?.ok) {
-          toast.success("Welcome! Check your inbox to verify your email.", { position: "top-right", duration: 4000 });
-          router.push("/");
+          toast.success("Welcome! Check your inbox for your verification code.", { position: "top-right", duration: 4000 });
+          router.push("/verifyemail");
           router.refresh();
         } else {
           toast.success("Account created successfully! Please sign in.", { position: "top-right", duration: 3000 });

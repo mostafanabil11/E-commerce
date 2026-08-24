@@ -6,9 +6,11 @@ declare module "next-auth" {
   
   interface User {
    user :{
+    _id? : string,
     name : string,
     email : string,
-    role : string
+    role : string,
+    isVerified? : boolean
    }
    token : string
   }
