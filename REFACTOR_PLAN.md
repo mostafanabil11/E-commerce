@@ -58,7 +58,7 @@ own backend, with a seeded dataset that mirrors what we're losing.
 ## Phase 6 — Orders & checkout
 
 - [x] `POST /orders/checkout-session/:cartId?url=` -> Stripe session, returns `{status, session:{url}}`
-- [ ] Webhook creates the order, clears the cart, increments `sold`
+- [x] Webhook settles the order idempotently, clears the cart, increments `sold`
 
 ## Phase 7 — Reviews & ratings
 
@@ -76,14 +76,19 @@ own backend, with a seeded dataset that mirrors what we're losing.
       wishlist, checkout, login, register, verifycode, resetpassword — all render from our API
 - [x] Verified through the UI: login, add-to-cart (correct discounted unit price), session ->
       backend token chain, next/image serving backend uploads
-- [ ] Stripe checkout submit (creates a real order + Stripe session) - left for you to trigger
+- [x] Stripe checkout verified: session created, inventory decremented, signed webhook
+      settles the order, replay is a no-op, forged signatures rejected
 
 ## Phase 10 — Ship
 
-- [ ] Root `.gitignore` (node_modules, .next, dist, config/*.env, runtime uploads)
-- [ ] `git init` at repo root, single monorepo commit
-- [ ] Push to `github.com/mostafanabil11/E-commerce.git` (**confirm the username** — the old
-      remotes were both under `mostafanabil725`)
+- [x] Root `.gitignore` (node_modules, .next, dist, config/*.env, runtime uploads)
+- [x] `git init` at repo root, monorepo commit
+- [x] Pushed to `github.com/mostafanabil11/E-commerce.git`
+
+## Status
+
+All phases complete. Both apps build clean and were verified end to end against
+the seeded catalogue.
 
 ## Notes / risks
 
