@@ -1,0 +1,43 @@
+# Dependencies
+node_modules/
+
+# Build output
+Backend/dist/
+Frontend/.next/
+Frontend/out/
+*.tsbuildinfo
+
+# Environment / secrets
+.env
+*.env
+!*.env.example
+Backend/config/*.env
+!Backend/config/dev.env.example
+Frontend/.env*
+!Frontend/.env.example
+
+# Runtime uploads — the seeded catalogue imagery IS tracked, user uploads are not
+Backend/uploads/*
+!Backend/uploads/seed/
+!Backend/uploads/seed/**
+
+# Logs
+*.log
+logs/
+npm-debug.log*
+yarn-error.log*
+
+# Test / coverage
+coverage/
+.nyc_output/
+
+# Editors & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Misc
+.temp
+.tmp
+*.pid
