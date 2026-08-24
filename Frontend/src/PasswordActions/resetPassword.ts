@@ -1,23 +1,12 @@
 'use server'
 
 import { resetPasswordSchemaType } from "@/Schema/ResetPassword.schema";
-import { apiUrl } from '@/lib/api';
+import { apiMutate } from "@/lib/api";
 
+/** Step 3: sets the new password, provided step 2 verified the code. */
 export default async function resetPasswordApi(formValues: resetPasswordSchemaType) {
-  try {
-    const response = await fetch(apiUrl('/auth/resetPassword'), {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        email: formValues.email,
-        newPassword: formValues.newPassword
-      }),
-    });
-    const payload = await response.json();
-    return payload;
-  } catch {
-    return { status: "fail", message: "Network error occurred" };
-  }
+  return apiMutate('/auth/resetPassword', {
+    method: 'PUT',
+    body: { email: formValues.email, newPassword: formValues.newPassword },
+  });
 }

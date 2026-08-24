@@ -17,10 +17,10 @@ function AddToWishlistBtnComponent({ productId }: { productId: string }) {
     setLoading(true);
     try {
       const response = await AddToWishlistApi(productId);
-      if (response?.status === "success") {
+      if (response.status === "success") {
         toast.success("Added to Wishlist", { duration: 2500, position: "top-right" });
       } else {
-        toast.error("Could not add to Wishlist", { duration: 2500, position: "top-right" });
+        toast.error(response.error || "Could not add to Wishlist", { duration: 2500, position: "top-right" });
         setLiked(false);
       }
     } catch (err) {
@@ -50,4 +50,4 @@ function AddToWishlistBtnComponent({ productId }: { productId: string }) {
 
 const AddToWishlistBtn = memo(AddToWishlistBtnComponent);
 export default AddToWishlistBtn;
-
+

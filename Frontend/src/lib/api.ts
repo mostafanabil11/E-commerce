@@ -61,3 +61,59 @@ export async function fetchApi<T>(
 
   return fallback;
 }
+
+
+export type MutationResult<T = Record<string, unknown>> = {
+  /** Authoritative outcome, derived from the HTTP status - never from message text. */
+  status: 'success' | 'fail';
+  /** Human-readable reason when `status` is 'fail'. */
+  error?: string;
+  /** Message echoed by the API, when it sends one. */
+  message?: string;
+} & Partial<T>;
+
+/**
+ * Performs a write against the API and normalises the outcome.
+ *
+ * Callers must branch on `status`, never on the wording of a message: the
+ * backend's "Invalid or expired reset code" contains the substring "valid",
+ * which a naive check reads as success.
+ */
+export async function apiMutate<T = Record<string, unknown>>(
+  path: string,
+  init: { method: string; body?: unknown; token?: string },
+): Promise<MutationResult<T>> {
+  try {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (init.token) headers.token = init.token;
+
+    const response = await fetch(apiUrl(path), {
+      method: init.method,
+      headers,
+      body: init.body === undefined ? undefined : JSON.stringify(init.body),
+    });
+
+    let payload: Record<string, unknown> = {};
+    try {
+      payload = (await response.json()) as Record<string, unknown>;
+    } catch {
+      // A body is not guaranteed, e.g. 204 responses.
+    }
+
+    if (!response.ok) {
+      const message = payload.message;
+      return {
+        ...payload,
+        status: 'fail',
+        error: Array.isArray(message)
+          ? String(message[0])
+          : (message as string) || `Request failed (${response.status})`,
+      } as MutationResult<T>;
+    }
+
+    // Spread first so the normalised status always wins.
+    return { ...payload, status: 'success' } as MutationResult<T>;
+  } catch {
+    return { status: 'fail', error: 'Could not reach the server. Please try again.' } as MutationResult<T>;
+  }
+}

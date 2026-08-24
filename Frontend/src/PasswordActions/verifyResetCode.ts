@@ -1,20 +1,12 @@
 'use server'
 
 import { verifyCodeSchemaType } from "@/Schema/VerifyCode.schema";
-import { apiUrl } from '@/lib/api';
+import { apiMutate } from "@/lib/api";
 
+/** Step 2: confirms the emailed code before a new password may be set. */
 export default async function verifyResetCodeApi(formValues: verifyCodeSchemaType) {
-  try {
-    const response = await fetch(apiUrl('/auth/verifyResetCode'), {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({ resetCode: formValues.resetCode }),
-    });
-    const payload = await response.json();
-    return payload;
-  } catch {
-    return { status: "fail", message: "Network error occurred" };
-  }
+  return apiMutate('/auth/verifyResetCode', {
+    method: 'POST',
+    body: { resetCode: formValues.resetCode },
+  });
 }

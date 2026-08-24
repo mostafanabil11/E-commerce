@@ -28,17 +28,12 @@ export default function VerifyCode() {
     setLoading(true);
     try {
       const response = await verifyResetCodeApi(values);
-      const isSuccess = 
-        response?.status === "Success" || 
-        response?.status?.toLowerCase() === "success" ||
-        response?.statusMsg === "success" ||
-        response?.message?.toLowerCase().includes("valid");
 
-      if (isSuccess) {
+      if (response.status === "success") {
         toast.success("Code verified successfully!", { position: 'top-right', duration: 2500 });
         router.push("/resetpassword");
       } else {
-        toast.error(response?.message || "Invalid verification code", { position: 'top-right', duration: 3000 });
+        toast.error(response.error || "Invalid verification code", { position: 'top-right', duration: 3500 });
       }
     } catch (err) {
       console.error(err);
@@ -59,10 +54,10 @@ export default function VerifyCode() {
     setResending(true);
     try {
       const response = await forgetPasswordApi({ email: savedEmail });
-      if (response?.statusMsg === "success" || response?.message?.toLowerCase().includes("code sent")) {
+      if (response.status === "success") {
         toast.success("New verification code sent to your email!", { position: 'top-right', duration: 3000 });
       } else {
-        toast.error(response?.message || "Could not resend code", { position: 'top-right', duration: 3000 });
+        toast.error(response.error || "Could not resend code", { position: 'top-right', duration: 3500 });
       }
     } catch (err) {
       console.error(err);

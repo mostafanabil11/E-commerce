@@ -16,7 +16,7 @@ function AddToCartBtnComponent({ productId }: { productId: string }) {
     setLoading(true);
     try {
       const response = await AddToCartApi(productId);
-      if (response?.status === "success") {
+      if (response.status === "success") {
         toast.success("Added to cart successfully", { position: "top-right", duration: 2500 });
         if (setNumberOfCartItems) {
           setNumberOfCartItems((prev) => prev + 1);
@@ -24,7 +24,7 @@ function AddToCartBtnComponent({ productId }: { productId: string }) {
         setAdded(true);
         setTimeout(() => setAdded(false), 2000);
       } else {
-        toast.error(response?.message || "Could not add item to cart", { position: "top-right" });
+        toast.error(response.error || "Could not add item to cart", { position: "top-right" });
       }
     } catch (err) {
       console.error(err);

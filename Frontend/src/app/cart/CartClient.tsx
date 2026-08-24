@@ -37,11 +37,13 @@ export default function CartClient({ initialProducts, initialPrice, initialCartI
     setIsClearing(true);
     try {
       const response = await clearCartApi();
-      if (response?.message === 'success') {
+      if (response.status === "success") {
         toast.success("Cart cleared successfully", { position: "top-right" });
         setProducts([]);
         setCartPrice(0);
         setNumberOfCartItems(0);
+      } else {
+        toast.error(response.error || "Failed to clear cart", { position: "top-right" });
       }
     } catch (err) {
       console.error(err);
@@ -55,12 +57,12 @@ export default function CartClient({ initialProducts, initialPrice, initialCartI
     setUpdatingId(id);
     try {
       const response = await removeFromCartApi(id);
-      if (response?.status === "success") {
+      if (response.status === "success" && response.data) {
         toast.success("Item removed from cart", { position: "top-right" });
         setProducts(response.data.products || []);
         setCartPrice(response.data.totalCartPrice || 0);
       } else {
-        toast.error("Could not remove item", { position: "top-right" });
+        toast.error(response.error || "Could not remove item", { position: "top-right" });
       }
     } catch (err) {
       console.error(err);
@@ -76,9 +78,11 @@ export default function CartClient({ initialProducts, initialPrice, initialCartI
     setUpdatingId(id);
     try {
       const response = await updateItemQuantityApi(id, String(count));
-      if (response?.status === "success") {
+      if (response.status === "success" && response.data) {
         setProducts(response.data.products || []);
         setCartPrice(response.data.totalCartPrice || 0);
+      } else if (response.status === "fail") {
+        toast.error(response.error || "Failed to update item quantity", { position: "top-right" });
       }
     } catch (err) {
       console.error(err);

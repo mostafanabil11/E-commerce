@@ -16,9 +16,11 @@ export default function WishlistClient({ initialProducts }: { initialProducts: W
     setRemovingId(id);
     try {
       const response = await removeFromWishlistApi(id);
-      if (response?.status === "success") {
+      if (response.status === "success") {
         toast.success('Removed from wishlist', { position: "top-right" });
         setProducts((prev) => prev.filter((item) => (item.id !== id && item._id !== id)));
+      } else {
+        toast.error(response.error || 'Could not remove item', { position: "top-right" });
       }
     } catch (err) {
       console.error(err);

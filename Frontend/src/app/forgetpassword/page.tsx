@@ -27,14 +27,14 @@ export default function ForgetPassword() {
     setLoading(true);
     try {
       const response = await forgetPasswordApi(values);
-      if (response?.statusMsg === "success" || response?.message?.toLowerCase().includes("code sent")) {
+      if (response.status === "success") {
         if (typeof window !== "undefined") {
           localStorage.setItem("resetEmail", values.email);
         }
         toast.success("Verification code sent to your email", { position: 'top-right', duration: 3000 });
         router.push("/verifycode");
       } else {
-        toast.error(response?.message || "Could not send verification code", { position: 'top-right', duration: 3000 });
+        toast.error(response.error || "Could not send verification code", { position: 'top-right', duration: 3500 });
       }
     } catch (err) {
       console.error(err);

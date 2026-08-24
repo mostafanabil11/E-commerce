@@ -36,16 +36,15 @@ export default function ResetPassword() {
     setLoading(true);
     try {
       const response = await resetPasswordApi(values);
-      const isSuccess = response?.token || response?.statusMsg === "success" || response?.status === "success" || response?.message === "success";
 
-      if (isSuccess) {
+      if (response.status === "success") {
         if (typeof window !== "undefined") {
           localStorage.removeItem("resetEmail");
         }
         toast.success("Password reset successfully! Please sign in.", { position: 'top-right', duration: 3000 });
         router.push("/login");
       } else {
-        toast.error(response?.message || "Could not reset password", { position: 'top-right', duration: 3000 });
+        toast.error(response.error || "Could not reset password", { position: 'top-right', duration: 3500 });
       }
     } catch (err) {
       console.error(err);
