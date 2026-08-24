@@ -1,11 +1,10 @@
-import { apiUrl } from '@/lib/api';
+import { fetchApi } from '@/lib/api';
+import { ProductType } from '@/Types/Products.types';
 
-
-export default async function getAllProductsApi() {
-  const response = await fetch(apiUrl('/products'), {
-    next: { revalidate: 3600 }
+/** Returns the product list, or an empty list if the API is unreachable. */
+export default async function getAllProductsApi(): Promise<ProductType[]> {
+  const payload = await fetchApi<{ data?: ProductType[] }>('/products', {
+    fallback: {},
   });
-  const { data } = await response.json();
-  return data;
+  return payload.data ?? [];
 }
-

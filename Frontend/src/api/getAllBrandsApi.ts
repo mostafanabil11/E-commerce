@@ -1,12 +1,6 @@
-import { apiUrl } from '@/lib/api';
-
+import { fetchApi } from '@/lib/api';
+import { BrandType } from '@/Types/Brand.type';
 
 export default async function getAllBrandsApi() {
-  const response = await fetch(apiUrl('/brands'), {
-    next: { revalidate: 3600 }
-  });
-  const data = await response.json();
-  return data;
+  return fetchApi<{ data?: BrandType[] }>('/brands', { fallback: { data: [] } });
 }
-
-

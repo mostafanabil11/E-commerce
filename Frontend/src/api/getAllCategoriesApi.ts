@@ -1,11 +1,6 @@
-import { apiUrl } from '@/lib/api';
-
+import { fetchApi } from '@/lib/api';
+import { CategoryType } from '@/Types/Category.type';
 
 export default async function getAllCategoriesApi() {
-  const response = await fetch(apiUrl('/categories'), {
-    next: { revalidate: 3600 }
-  });
-  const data = await response.json();
-  return data;
+  return fetchApi<{ data?: CategoryType[] }>('/categories', { fallback: { data: [] } });
 }
-

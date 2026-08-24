@@ -1,11 +1,7 @@
-import { apiUrl } from '@/lib/api';
+import { fetchApi } from '@/lib/api';
+import { ProductType } from '@/Types/Products.types';
 
-
+/** `data` is undefined when the product is missing or the API is unreachable. */
 export default async function getSingleProductApi(id: string) {
-  const response = await fetch(apiUrl(`/products/${id}`), {
-    next: { revalidate: 3600 }
-  });
-  const data = await response.json();
-  return data;
+  return fetchApi<{ data?: ProductType }>(`/products/${id}`, { fallback: {} });
 }
-

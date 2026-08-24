@@ -22,7 +22,10 @@ import { WishlistModule } from './wishlist/wishlist.module';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      // Local development reads config/dev.env; hosted environments (Render,
+      // etc.) inject real environment variables and have no such file.
       envFilePath: resolve('./config/dev.env'),
+      ignoreEnvFile: process.env.NODE_ENV === 'production',
     }),
     MongooseModule.forRootAsync({
       imports: [ConfigModule],

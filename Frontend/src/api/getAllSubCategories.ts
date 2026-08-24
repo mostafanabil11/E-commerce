@@ -1,8 +1,5 @@
-import { apiUrl } from '@/lib/api';
-
+import { fetchApi } from '@/lib/api';
 
 export default async function getAllSubCategoriesApi() {
-const response = await fetch(apiUrl('/subcategories'));
-const payload = await response.json();
-return payload
+  return fetchApi<{ data?: unknown[] }>('/subcategories', { fallback: { data: [] } });
 }
