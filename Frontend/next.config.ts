@@ -1,27 +1,41 @@
 import type { NextConfig } from "next";
 
 /**
- * Product imagery is served by the backend out of its /uploads directory, so
- * the API host has to be allowed for next/image. `API` drives the dev default;
- * add your deployed backend host here before shipping.
+ * Product imagery is served by the backend from its /uploads directory, so the
+ * API host must be allowed for next/image.
+ *
+ * The host is derived from `API`, and in development any localhost port is also
+ * allowed: the API base and the URLs the API returns can legitimately differ
+ * (for example when the backend runs on a non-default port but advertises
+ * PUBLIC_URL on another), and that mismatch should not blank out every image.
  */
-const apiHost = (() => {
+function apiPattern() {
   try {
-    return new URL(process.env.API || "http://localhost:5000/api/v1");
+    const url = new URL(process.env.API || "http://localhost:5000/api/v1");
+    return {
+      protocol: url.protocol.replace(":", "") as "http" | "https",
+      hostname: url.hostname,
+      port: url.port || undefined,
+      pathname: "/**",
+    };
   } catch {
-    return new URL("http://localhost:5000");
+    return undefined;
   }
-})();
+}
+
+const localhostPatterns = [
+  // No `port` means any port on that host.
+  { protocol: "http" as const, hostname: "localhost", pathname: "/**" },
+  { protocol: "http" as const, hostname: "127.0.0.1", pathname: "/**" },
+];
+
+const pattern = apiPattern();
 
 const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
-      {
-        protocol: apiHost.protocol.replace(":", "") as "http" | "https",
-        hostname: apiHost.hostname,
-        port: apiHost.port || undefined,
-        pathname: "/**",
-      },
+      ...(pattern ? [pattern] : []),
+      ...(process.env.NODE_ENV === "production" ? [] : localhostPatterns),
     ],
   },
 };

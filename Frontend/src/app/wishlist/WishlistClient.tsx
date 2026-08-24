@@ -74,6 +74,7 @@ export default function WishlistClient({ initialProducts }: { initialProducts: W
                   <Image
                     height={200}
                     width={200}
+                    sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
                     alt={product.title}
                     src={product.imageCover}
                     className="w-full h-full object-contain"

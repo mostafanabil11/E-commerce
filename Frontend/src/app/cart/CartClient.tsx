@@ -127,7 +127,7 @@ export default function CartClient({ initialProducts, initialPrice, initialCartI
           
           {/* Left Column: Cart Items List */}
           <div className="lg:col-span-8 space-y-4">
-            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/70 dark:border-slate-800 p-6 shadow-sm divide-y divide-slate-100 dark:divide-slate-800">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl border border-slate-200/70 dark:border-slate-800 p-4 sm:p-6 shadow-sm divide-y divide-slate-100 dark:divide-slate-800">
               {products.map((item: CartProductType, index: number) => {
                 const pId = item.product?._id || item._id || String(index);
                 return (
@@ -141,6 +141,7 @@ export default function CartClient({ initialProducts, initialPrice, initialCartI
                       <Image
                         width={200}
                         height={200}
+                        sizes="(max-width: 640px) 33vw, 120px"
                         alt={item.product?.title || "Product"}
                         src={item.product?.imageCover || ""}
                         className="w-full h-full object-contain"

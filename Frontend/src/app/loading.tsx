@@ -7,7 +7,7 @@ export default function MainLoading() {
       <div className="h-8 w-48 bg-slate-200 dark:bg-slate-800 rounded-xl mb-8" />
 
       {/* Grid Skeleton */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">
         {[...Array(8)].map((_, i) => (
           <div
             key={i}
@@ -33,4 +33,4 @@ export default function MainLoading() {
       </div>
     </div>
   );
-}
+}

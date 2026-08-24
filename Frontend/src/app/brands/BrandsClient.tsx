@@ -60,6 +60,7 @@ export default function BrandsClient({ initialBrands }: { initialBrands: BrandTy
                   <Image
                     width={300}
                     height={300}
+                    sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 16vw"
                     className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500"
                     src={brand.image}
                     alt={brand.name}

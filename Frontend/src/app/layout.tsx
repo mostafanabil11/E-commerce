@@ -3,6 +3,7 @@ import { Plus_Jakarta_Sans, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Navbar from "./_components/Navbar/Navbar";
 import VerifyEmailBanner from "./_components/VerifyEmailBanner/VerifyEmailBanner";
+import BottomNav from "./_components/BottomNav/BottomNav";
 import { Toaster } from "sonner";
 
 import MySessionProvider from "@/MySessionProvider/MySessionProvider";
@@ -48,7 +49,7 @@ export default function RootLayout({
               <main className="flex-1 w-full pt-4 pb-16">
                 {children}
               </main>
-              <footer className="border-t border-slate-200/80 bg-white/50 backdrop-blur-md py-8 mt-auto dark:border-slate-800 dark:bg-slate-950/50">
+              <footer className="border-t border-slate-200/80 bg-white/50 backdrop-blur-md py-8 mt-auto pb-24 md:pb-8 dark:border-slate-800 dark:bg-slate-950/50">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-slate-500">
                   <div className="flex items-center gap-2">
                     <span className="font-semibold text-slate-800 dark:text-slate-200">NovaCart</span>
@@ -61,6 +62,7 @@ export default function RootLayout({
                   </div>
                 </div>
               </footer>
+              <BottomNav />
               <Toaster position="top-right" richColors closeButton />
             </CartContextProvider>
           </MySessionProvider>

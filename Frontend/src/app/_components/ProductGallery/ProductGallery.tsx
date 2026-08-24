@@ -24,7 +24,7 @@ function ProductGalleryComponent({
   return (
     <div className="space-y-4">
       {/* Main Image Showcase */}
-      <div className="relative w-full aspect-square rounded-3xl overflow-hidden bg-white dark:bg-slate-900 border border-slate-200/70 dark:border-slate-800 p-8 shadow-sm flex items-center justify-center">
+      <div className="relative w-full aspect-square rounded-2xl sm:rounded-3xl overflow-hidden bg-white dark:bg-slate-900 border border-slate-200/70 dark:border-slate-800 p-4 sm:p-8 shadow-sm flex items-center justify-center">
         <Image
           width={800}
           height={800}

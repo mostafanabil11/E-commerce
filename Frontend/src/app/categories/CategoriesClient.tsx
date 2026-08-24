@@ -46,7 +46,7 @@ export default function CategoriesClient({ initialCategories }: { initialCategor
 
       {/* Grid */}
       {filteredCategories.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">
           {filteredCategories.map((category: CategoryType) => (
             <Link
               key={category._id}
@@ -54,20 +54,21 @@ export default function CategoriesClient({ initialCategories }: { initialCategor
               className="block"
             >
               <div
-                className="group relative rounded-3xl overflow-hidden bg-white dark:bg-slate-900 border border-slate-200/70 dark:border-slate-800 shadow-sm hover:shadow-2xl hover:-translate-y-1.5 transition-all duration-300 cursor-pointer"
+                className="group relative rounded-2xl sm:rounded-3xl overflow-hidden bg-white dark:bg-slate-900 border border-slate-200/70 dark:border-slate-800 shadow-sm hover:shadow-2xl hover:-translate-y-1.5 transition-all duration-300 cursor-pointer"
               >
-                <div className="relative w-full h-[260px] overflow-hidden">
+                <div className="relative w-full h-[150px] sm:h-[200px] lg:h-[260px] overflow-hidden">
                   <Image
                     height={600}
                     width={600}
                     className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-700"
+                    sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
                     src={category.image}
                     alt={category.name}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/20 to-transparent" />
                 </div>
-                <div className="absolute bottom-0 inset-x-0 p-5 text-center">
-                  <h3 className="text-lg font-bold text-white tracking-tight drop-shadow-md group-hover:text-emerald-400 transition-colors">
+                <div className="absolute bottom-0 inset-x-0 p-3 sm:p-5 text-center">
+                  <h3 className="text-sm sm:text-base lg:text-lg font-bold text-white tracking-tight drop-shadow-md group-hover:text-emerald-400 transition-colors">
                     {category.name}
                   </h3>
                 </div>

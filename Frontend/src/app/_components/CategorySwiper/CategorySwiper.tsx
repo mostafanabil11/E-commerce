@@ -85,6 +85,7 @@ export default function CategorySwiper({ data }: { data: CategoryType[] }) {
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
                       width={400} 
                       height={400} 
+                      sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 16vw"
                       src={isBook ? booksImg : category.image} 
                       alt={category.name} 
                     />
